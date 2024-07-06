@@ -41,6 +41,7 @@ func main() {
 		ShowSecondaryText(false)
 
 	list.SetBorder(true)
+	list.SetTitle("Search Results")
 
 	// 検索画面のレイアウト
 	searchFlex := tview.NewFlex().
@@ -64,10 +65,11 @@ func main() {
 			results := convertResult(executeSearch(text))
 			for _, item := range results {
 				// item := item // クロージャで変数のコピーを作成
-				list.AddItem(item.Title, "Update at ", 0, nil)
+				list.AddItem(item.Title, "", 0, nil)
 				list.SetSelectedFunc(func(i int, _ string, _ string, _ rune) {
 					mainTextView.Clear()
-					mainTextView.SetText("Selected: " + results[i].URL)
+					mainTextView.ScrollToBeginning()
+					mainTextView.SetText(drawArticle(results[i].URL))
 					app.SetFocus(mainTextView)
 					pages.SwitchToPage("main")
 				})

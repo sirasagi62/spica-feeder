@@ -42,7 +42,7 @@ func convertResult(z ZennSearchResult) []ViewerResult {
 	res := make([]ViewerResult, len(z.Articles))
 	for i, item := range z.Articles {
 		res[i] = ViewerResult{
-			Title: item.Emoji + " " + item.Title,
+			Title: item.Emoji + "　" + item.Title,
 			URL:   "https://zenn.dev" + item.Path,
 			Date:  item.BodyUpdatedAt,
 		}
