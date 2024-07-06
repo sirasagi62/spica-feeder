@@ -23,8 +23,10 @@ func main() {
 		SetDynamicColors(true).
 		SetRegions(true).
 		SetWordWrap(true)
+	mainTextView.SetBorder(true)
+	mainTextView.SetTitle("🚀ZennView")
 
-		// キーバインド情報の表示
+	// キーバインド情報の表示
 	keybindings := tview.NewTextView().
 		SetText("Press '/' to search, 'Ctrl+q' to quit").
 		SetDynamicColors(true).
@@ -42,6 +44,7 @@ func main() {
 
 	list.SetBorder(true)
 	list.SetTitle("Search Results")
+	list.ShowSecondaryText(true)
 
 	// 検索画面のレイアウト
 	searchFlex := tview.NewFlex().
@@ -65,11 +68,12 @@ func main() {
 			results := convertResult(executeSearch(text))
 			for _, item := range results {
 				// item := item // クロージャで変数のコピーを作成
-				list.AddItem(item.Title, "", 0, nil)
+				list.AddItem(item.Title, "- Update at "+item.Date.Local().UTC().Format("2006/1/2"), 0, nil)
 				list.SetSelectedFunc(func(i int, _ string, _ string, _ rune) {
 					mainTextView.Clear()
 					mainTextView.ScrollToBeginning()
 					mainTextView.SetText(drawArticle(results[i].URL))
+					mainTextView.SetTitle(results[i].Title)
 					app.SetFocus(mainTextView)
 					pages.SwitchToPage("main")
 				})
@@ -118,9 +122,4 @@ func main() {
 	if err := app.SetRoot(layout, true).Run(); err != nil {
 		panic(err)
 	}
-}
-
-// 部分一致をチェックする関数
-func contains(str, substr string) bool {
-	return len(str) >= len(substr) && str[:len(substr)] == substr
 }
