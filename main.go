@@ -81,8 +81,11 @@ func main() {
 	mainTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyRune && event.Rune() == '/' {
 			pages.SwitchToPage("search")
-			app.SetFocus(inputField)
-			//inputField.SetText("")
+			if inputField.GetText() == "" {
+				app.SetFocus(inputField)
+			} else {
+				app.SetFocus(list)
+			}
 		}
 		return event
 	})
