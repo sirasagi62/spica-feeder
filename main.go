@@ -24,7 +24,7 @@ func main() {
 		SetRegions(true).
 		SetWordWrap(true)
 	mainTextView.SetBorder(true)
-	mainTextView.SetTitle("🚀ZennView")
+	mainTextView.SetTitle("🚀 ZennView")
 
 	// キーバインド情報の表示
 	keybindings := tview.NewTextView().
@@ -43,7 +43,7 @@ func main() {
 		ShowSecondaryText(false)
 
 	list.SetBorder(true)
-	list.SetTitle("Search Results")
+	list.SetTitle("🔍 Search Results")
 	list.ShowSecondaryText(true)
 
 	// 検索画面のレイアウト
@@ -68,7 +68,7 @@ func main() {
 			results := convertResult(executeSearch(text))
 			for _, item := range results {
 				// item := item // クロージャで変数のコピーを作成
-				list.AddItem(item.Title, "- Update at "+item.Date.Local().UTC().Format("2006/1/2"), 0, nil)
+				list.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2"), "", 0, nil)
 				list.SetSelectedFunc(func(i int, _ string, _ string, _ rune) {
 					mainTextView.Clear()
 					mainTextView.ScrollToBeginning()
