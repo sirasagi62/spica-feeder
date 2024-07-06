@@ -6,11 +6,20 @@ import (
 )
 
 func main() {
+	start_text := `
+  _____                 __     ___               
+ |__  /___ _ __  _ __   \ \   / (_) _____      __
+   / // _ \ '_ \| '_ \   \ \ / /| |/ _ \ \ /\ / /
+  / /|  __/ | | | | | |   \ V / | |  __/\ V  V / 
+ /____\___|_| |_|_| |_|    \_/  |_|\___| \_/\_/  
+
+ - Press '/' to search
+	`
 	app := tview.NewApplication()
 
 	// メイン画面のテキストビュー
 	mainTextView := tview.NewTextView().
-		SetText("Press '/' to search").
+		SetText(start_text).
 		SetDynamicColors(true).
 		SetRegions(true).
 		SetWordWrap(true)
@@ -31,11 +40,7 @@ func main() {
 	list := tview.NewList().
 		ShowSecondaryText(false)
 
-	// 初期データをリストに追加
-	items := []string{"Item 1", "Item 2", "Item 3", "Item 4", "Item 5"}
-	for _, item := range items {
-		list.AddItem(item, "", 0, nil)
-	}
+	list.SetBorder(true)
 
 	// 検索画面のレイアウト
 	searchFlex := tview.NewFlex().
@@ -51,27 +56,35 @@ func main() {
 	// テキストボックスの入力が変更されたときのハンドラ
 	inputField.SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEnter {
-			text := inputField.GetText()
 			list.Clear()
-			for _, item := range items {
-				if text == "" || contains(item, text) {
-					item := item // クロージャで変数のコピーを作成
-					list.AddItem(item, "", 0, func() {
-						mainTextView.SetText("Selected: " + item)
-						app.SetFocus(mainTextView)
-						pages.SwitchToPage("main")
-					})
-				}
+			text := inputField.GetText()
+			if text == "" {
+				return
 			}
+			results := convertResult(executeSearch(text))
+			for _, item := range results {
+				// item := item // クロージャで変数のコピーを作成
+				list.AddItem(item.Title, "Update at ", 0, nil)
+				list.SetSelectedFunc(func(i int, _ string, _ string, _ rune) {
+					mainTextView.Clear()
+					mainTextView.SetText("Selected: " + results[i].URL)
+					app.SetFocus(mainTextView)
+					pages.SwitchToPage("main")
+				})
+			}
+			app.SetFocus(list)
 		}
 	})
 	// "/"キーを押したときのハンドラ
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	mainTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyRune && event.Rune() == '/' {
-			inputField.SetText("")
 			pages.SwitchToPage("search")
 			app.SetFocus(inputField)
+			//inputField.SetText("")
 		}
+		return event
+	})
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyCtrlQ {
 			app.Stop()
 		}
