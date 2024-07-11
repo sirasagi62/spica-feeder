@@ -1,0 +1,61 @@
+[zenn]
+main = "https://zenn.dev/feed"
+topic.url = "https://zenn.dev/topics/$topic/feed"
+topic.following = [
+    "go",
+    "react",
+    "typescript",
+    "llm",
+    "python",
+    "neovim",
+    "vim",
+    "security"
+]
+user.url = "https://zenn.dev/$user"
+user.following = [
+
+]
+
+[qiita]
+main = "https://qiita.com/popular-items/feed"
+topic.url = "https://qiita.com/tags/$topic/feed"
+topic.following = [
+    "go",
+    "react",
+    "typescript",
+    "llm",
+    "python",
+    "neovim",
+    "vim"
+]
+
+[infoQ]
+main = "https://feed.infoq.com/jp"
+
+["gihyo.jp"]
+main = "https://gihyo.jp/feed/atom"
+
+["postd.cc"]
+main = "https://postd.cc/feed/"
+
+
+[zdnet]
+main = "http://feeds.japan.zdnet.com/rss/zdnet/all.rdf"
+
+["@IT"]
+main = "https://rss.itmedia.co.jp/rss/2.0/ait.xml"
+
+[Publickey1]
+main = "https://www.publickey1.jp/atom.xml"
+
+[Gigazine]
+main = "https://gigazine.net/news/rss_2.0/"
+
+["HuggingFace Blog"]
+main = "https://huggingface.co/blog/feed.xml"
+
+[Reddit]
+topic.url = "https://www.reddit.com/r/$topic/.rss"
+topic.following = [
+    "LocalLLaMA"
+]
