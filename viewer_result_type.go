@@ -14,6 +14,9 @@ type ViewerResult struct {
 }
 
 func fileterViewerResultByName(searchStr string, vr *[]ViewerResult) []ViewerResult {
+	if searchStr == "" {
+		return *vr
+	}
 	return lo.Filter(*vr, func(item ViewerResult, index int) bool {
 		return strings.Contains(item.Title, searchStr)
 	})

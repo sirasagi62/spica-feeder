@@ -73,9 +73,6 @@ func main() {
 		if key == tcell.KeyEnter {
 			list.Clear()
 			text := inputField.GetText()
-			if text == "" {
-				return
-			}
 			results := fileterViewerResultByName(text, &initRss)
 			for _, item := range results {
 				// item := item // クロージャで変数のコピーを作成
