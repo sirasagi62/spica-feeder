@@ -7,16 +7,15 @@ import (
 
 func main() {
 	start_text := `
-  _____                 __     ___               
- |__  /___ _ __  _ __   \ \   / (_) _____      __
-   / // _ \ '_ \| '_ \   \ \ / /| |/ _ \ \ /\ / /
-  / /|  __/ | | | | | |   \ V / | |  __/\ V  V / 
- /____\___|_| |_|_| |_|    \_/  |_|\___| \_/\_/  
+┏┓  •     ┏┓     ┓
+┗┓┏┓┓┏┏┓  ┣ ┏┓┏┓┏┫
+┗┛┣┛┗┗┗┻  ┻ ┗ ┗ ┗┻
+  ┛                                          
 
  - Press '/' to search
 	`
 	app := tview.NewApplication()
-
+	initRss := initFeeder()
 	// メイン画面のテキストビュー
 	mainTextView := tview.NewTextView().
 		SetText(start_text).
@@ -57,6 +56,18 @@ func main() {
 		AddPage("main", mainTextView, true, true).
 		AddPage("search", searchFlex, true, false)
 
+	for _, item := range initRss {
+		// item := item // クロージャで変数のコピーを作成
+		list.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2"), "", 0, nil)
+		list.SetSelectedFunc(func(i int, _ string, _ string, _ rune) {
+			mainTextView.Clear()
+			mainTextView.ScrollToBeginning()
+			mainTextView.SetText(drawArticle(initRss[i].URL))
+			mainTextView.SetTitle(initRss[i].Title)
+			app.SetFocus(mainTextView)
+			pages.SwitchToPage("main")
+		})
+	}
 	// テキストボックスの入力が変更されたときのハンドラ
 	inputField.SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEnter {
@@ -65,7 +76,7 @@ func main() {
 			if text == "" {
 				return
 			}
-			results := convertResult(executeSearch(text))
+			results := fileterViewerResultByName(text, &initRss)
 			for _, item := range results {
 				// item := item // クロージャで変数のコピーを作成
 				list.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2"), "", 0, nil)

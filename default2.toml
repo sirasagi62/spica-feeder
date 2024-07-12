@@ -1,61 +1,61 @@
 [[src]]
 main = "https://zenn.dev/feed"
-topic.url = "https://zenn.dev/topics/$topic/feed"
-topic.following = [
-    "go",
-    "react",
-    "typescript",
-    "llm",
-    "python",
-    "neovim",
-    "vim",
-    "security"
-]
-user.url = "https://zenn.dev/$user"
-user.following = [
+# topic.url = "https://zenn.dev/topics/$topic/feed"
+# topic.following = [
+#     "go",
+#     "react",
+#     "typescript",
+#     "llm",
+#     "python",
+#     "neovim",
+#     "vim",
+#     "security"
+# ]
+# user.url = "https://zenn.dev/$user"
+# user.following = [
 
-]
+# ]
 
-[[src]]
-main = "https://qiita.com/popular-items/feed"
-topic.url = "https://qiita.com/tags/$topic/feed"
-topic.following = [
-    "go",
-    "react",
-    "typescript",
-    "llm",
-    "python",
-    "neovim",
-    "vim"
-]
+# [[src]]
+# main = "https://qiita.com/popular-items/feed"
+# topic.url = "https://qiita.com/tags/$topic/feed"
+# topic.following = [
+#     "go",
+#     "react",
+#     "typescript",
+#     "llm",
+#     "python",
+#     "neovim",
+#     "vim"
+# ]
 
-[[src]]
-main = "https://feed.infoq.com/jp"
+# [[src]]
+# main = "https://feed.infoq.com/jp"
 
-[[src]]
-main = "https://gihyo.jp/feed/atom"
+# [[src]]
+# main = "https://gihyo.jp/feed/atom"
 
-[[src]]
-main = "https://postd.cc/feed/"
+# [[src]]
+# main = "https://postd.cc/feed/"
 
 
-[[src]]
-main = "http://feeds.japan.zdnet.com/rss/zdnet/all.rdf"
+# [[src]]
+# main = "http://feeds.japan.zdnet.com/rss/zdnet/all.rdf"
 
-[[src]]
-main = "https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml"
+# [[src]]
+# main = "https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml"
 
-[[src]]
-main = "https://www.publickey1.jp/atom.xml"
+# [[src]]
+# main = "https://www.publickey1.jp/atom.xml"
 
-[[src]]
-main = "https://gigazine.net/news/rss_2.0/"
+# [[src]]
+# main = "https://gigazine.net/news/rss_2.0/"
 
-[[src]]
-main = "https://huggingface.co/blog/feed.xml"
+# [[src]]
+# main = "https://huggingface.co/blog/feed.xml"
 
-[[src]]
-topic.url = "https://www.reddit.com/r/$topic/.rss"
-topic.following = [
-    "LocalLLaMA"
-]
+# [[src]]
+# topic.url = "https://www.reddit.com/r/$topic/.rss"
+# topic.following = [
+#     "LocalLLaMA"
+# ]
