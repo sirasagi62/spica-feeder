@@ -26,7 +26,7 @@ func drawRSSList(ui *RSSListUIComponents, RSS []ViewerResult) {
 	text := ui.SearchInput.GetText()
 	results := filterViewerResultByName(text, &RSS)
 	for _, item := range results {
-		ui.List.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2"), "", 0, nil)
+		ui.List.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2 15:04"), item.URL, 0, nil)
 		ui.List.SetSelectedFunc(func(i int, _ string, _ string, _ rune) {
 			ui.MainTextView.Clear()
 			ui.MainTextView.ScrollToBeginning()
@@ -142,8 +142,8 @@ func main() {
 
 	// Pagesを作成
 	pages := tview.NewPages().
-		AddPage("main", mainTextView, true, true).
-		AddPage("search", searchFlex, true, false)
+		AddPage("main", mainTextView, true, false).
+		AddPage("search", searchFlex, true, true)
 
 	ui := &RSSListUIComponents{}
 	ui.App = app

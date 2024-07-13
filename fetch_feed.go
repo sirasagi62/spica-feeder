@@ -71,9 +71,6 @@ func (rf *RSSFetcher) GetFeed(srcs RSSFeed, svr *SafeViewerResults) {
 			svr.Mu.Lock()
 			svr.FetchingURL = *src.Main
 			svr.ViewerResults = append(svr.ViewerResults, rf.getFeedResults(*src.Main)...)
-			sort.Slice(svr.ViewerResults, func(i, j int) bool {
-				return svr.ViewerResults[i].Date.After(svr.ViewerResults[j].Date)
-			})
 			svr.Mu.Unlock()
 		}
 		// if src.Topic != nil {
@@ -84,7 +81,9 @@ func (rf *RSSFetcher) GetFeed(srcs RSSFeed, svr *SafeViewerResults) {
 		// }
 	}
 	svr.Done = true
-	return
+	sort.Slice(svr.ViewerResults, func(i, j int) bool {
+		return svr.ViewerResults[i].Date.After(svr.ViewerResults[j].Date)
+	})
 }
 
 func (rf *RSSFetcher) fetchTopicFeed(t Topic) []ViewerResult {
