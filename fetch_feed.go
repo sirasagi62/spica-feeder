@@ -1,9 +1,11 @@
 package main
 
 import (
-	"log"
+	"sort"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/mmcdole/gofeed"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -16,11 +18,11 @@ type RSSFetcher struct {
 	DB                   *leveldb.DB
 }
 
-func getFeedResults(url string, fp *gofeed.Parser, db *leveldb.DB) []ViewerResult {
-	encodedCVR, err := db.Get([]byte(url), nil)
+func (rf *RSSFetcher) getFeedResults(url string) []ViewerResult {
+	encodedCVR, err := rf.DB.Get([]byte(url), nil)
 	// そもそもdbを取得できなかった。
 	if leveldb.ErrNotFound == err {
-		return fetchEachFeedURL(url, fp, db)
+		return rf.fetchEachFeedURLOverNetwork(url)
 	} else if err != nil {
 		log.Fatal("Failed to read db")
 		return []ViewerResult{}
@@ -30,38 +32,49 @@ func getFeedResults(url string, fp *gofeed.Parser, db *leveldb.DB) []ViewerResul
 		log.Fatal("Failed to decode CachedViewerResults")
 		return []ViewerResult{}
 	}
-	duration := time.Now().Sub(cvr.CachedDate).Seconds()
+	duration := rf.Now.Sub(cvr.CachedDate).Seconds()
 	// キャッシュ切れ
 	if duration > 3600.0 {
-		return fetchEachFeedURL(url, fp, db)
+		return rf.fetchEachFeedURLOverNetwork(url)
 	}
+	log.Printf("Use cache for %s", url)
 	return cvr.Value
 }
-func fetchEachFeedURL(url string, fp *gofeed.Parser, db *leveldb.DB) []ViewerResult {
-	fetchedFeeds, _ := fp.ParseURL(url)
+func (rf *RSSFetcher) fetchEachFeedURLOverNetwork(url string) []ViewerResult {
+	log.Printf("Sleep for avoiding DDoS attack")
+	time.Sleep(2 * time.Second)
+	log.Printf("Fetch data : %s", url)
+	// Fetch
+	fetchedFeeds, _ := rf.Fp.ParseURL(url)
 	res := make([]ViewerResult, len(fetchedFeeds.Items))
 	for i, f := range fetchedFeeds.Items {
 		res[i] = ViewerResult{Title: f.Title, URL: f.Link, Date: *f.PublishedParsed}
 	}
-	cacheData, err := EncodeCachedViewerResults(CachedViewerResults{CachedDate: time.Now(), Value: res})
+
+	// DBにキャッシュを保存
+	cacheData, err := EncodeCachedViewerResults(CachedViewerResults{CachedDate: rf.Now, Value: res})
 	if err != nil {
 		log.Fatal("Failed to encode CVR")
 		return []ViewerResult{}
 	}
-	err = db.Put([]byte(url), cacheData, nil)
+	err = rf.DB.Put([]byte(url), cacheData, nil)
 	if err != nil {
 		log.Fatal("Failed to save cache data.")
 		return []ViewerResult{}
 	}
 	return res
 }
-func fetchFeed(srcs RSSFeed, db *leveldb.DB) []ViewerResult {
-	fp := gofeed.NewParser()
-	var feedResults []ViewerResult
+func (rf *RSSFetcher) GetFeed(srcs RSSFeed, svr *SafeViewerResults) {
 	for _, src := range srcs.Src {
 		if src.Main != nil {
-			println(*src.Main)
-			feedResults = append(feedResults, fetchEachFeedURL(*src.Main, fp, db)...)
+			log.Printf("Processing ....:%s", *src.Main)
+			svr.Mu.Lock()
+			svr.FetchingURL = *src.Main
+			svr.ViewerResults = append(svr.ViewerResults, rf.getFeedResults(*src.Main)...)
+			sort.Slice(svr.ViewerResults, func(i, j int) bool {
+				return svr.ViewerResults[i].Date.After(svr.ViewerResults[j].Date)
+			})
+			svr.Mu.Unlock()
 		}
 		// if src.Topic != nil {
 		// 	feedResults = append(feedResults, fetchTopicFeed(*src.Topic, fp)...)
@@ -70,21 +83,22 @@ func fetchFeed(srcs RSSFeed, db *leveldb.DB) []ViewerResult {
 		// 	feedResults = append(feedResults, fetchUserFeed(*src.User, fp)...)
 		// }
 	}
-	return feedResults
+	svr.Done = true
+	return
 }
 
-func fetchTopicFeed(t Topic, fp *gofeed.Parser, db *leveldb.DB) []ViewerResult {
+func (rf *RSSFetcher) fetchTopicFeed(t Topic) []ViewerResult {
 	var feedResults []ViewerResult
 	for _, fol := range t.Following {
-		feedResults = append(feedResults, fetchEachFeedURL(strings.ReplaceAll(t.URL, "$topic", fol), fp, db)...)
+		feedResults = append(feedResults, rf.getFeedResults(strings.ReplaceAll(t.URL, "$topic", fol))...)
 	}
 	return feedResults
 }
 
-func fetchUserFeed(t Topic, fp *gofeed.Parser, db *leveldb.DB) []ViewerResult {
+func (rf *RSSFetcher) fetchUserFeed(t Topic) []ViewerResult {
 	var feedResults []ViewerResult
 	for _, fol := range t.Following {
-		feedResults = append(feedResults, fetchEachFeedURL(strings.ReplaceAll(t.URL, "$topic", fol), fp, db)...)
+		feedResults = append(feedResults, rf.getFeedResults(strings.ReplaceAll(t.URL, "$topic", fol))...)
 	}
 	return feedResults
 }

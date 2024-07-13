@@ -1,14 +1,91 @@
 package main
 
 import (
-	"log"
+	"os"
+	"sync"
+	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
+type RSSListUIComponents struct {
+	App            *tview.Application
+	Pages          *tview.Pages
+	List           *tview.List
+	MainTextView   *tview.TextView
+	StatusTextView *tview.TextView
+	SearchInput    *tview.InputField
+}
+
+func drawRSSList(ui *RSSListUIComponents, RSS []ViewerResult) {
+	ui.List.Clear()
+	text := ui.SearchInput.GetText()
+	results := filterViewerResultByName(text, &RSS)
+	for _, item := range results {
+		ui.List.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2"), "", 0, nil)
+		ui.List.SetSelectedFunc(func(i int, _ string, _ string, _ rune) {
+			ui.MainTextView.Clear()
+			ui.MainTextView.ScrollToBeginning()
+			ui.MainTextView.SetText(drawArticle(results[i].URL))
+			ui.MainTextView.SetTitle(results[i].Title)
+			ui.App.SetFocus(ui.MainTextView)
+			ui.Pages.SwitchToPage("main")
+		})
+	}
+}
+
+func redrawRSSListUntilComplete(ui *RSSListUIComponents, svr *SafeViewerResults) {
+	for {
+		if svr.Done {
+			log.Println("Completed to fetch RSS Feeds.")
+			ui.App.QueueUpdateDraw(func() {
+				ui.StatusTextView.SetText("Completed to fetch :)")
+				drawRSSList(ui, svr.ViewerResults)
+			})
+
+			return
+		}
+		ui.App.QueueUpdateDraw(func() {
+			ui.StatusTextView.SetText("Fetching :" + svr.FetchingURL)
+			drawRSSList(ui, svr.ViewerResults)
+		})
+		time.Sleep(1 * time.Second)
+	}
+}
+
+type SafeViewerResults struct {
+	Done          bool
+	FetchingURL   string
+	Mu            sync.Mutex
+	WG            sync.WaitGroup
+	ViewerResults []ViewerResult
+}
+
 func main() {
+	// Logging
+	// ログを書き込むファイルを開く（なければ作成）
+	file, err := os.OpenFile("spica.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		// エラーハンドリング
+		log.Fatal(err)
+	}
+
+	// 関数が終了する際にファイルを閉じる
+	defer file.Close()
+
+	// ログの出力先をファイルに設定
+	log.SetOutput(file)
+
+	// ログのフォーマットを設定（時間を含める）
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+	})
+	// Logging END
+
 	start_text := `
 ┏┓  •     ┏┓     ┓
 ┗┓┏┓┓┏┏┓  ┣ ┏┓┏┓┏┫
@@ -23,8 +100,11 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+	log.Print("Init App.")
+
 	app := tview.NewApplication()
-	initRss := initFeeder()
+	safeViewerResults := SafeViewerResults{ViewerResults: []ViewerResult{}, Done: false}
+	initFeeder(db, &safeViewerResults)
 	// メイン画面のテキストビュー
 	mainTextView := tview.NewTextView().
 		SetText(start_text).
@@ -65,36 +145,48 @@ func main() {
 		AddPage("main", mainTextView, true, true).
 		AddPage("search", searchFlex, true, false)
 
-	for _, item := range initRss {
-		// item := item // クロージャで変数のコピーを作成
-		list.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2"), "", 0, nil)
-		list.SetSelectedFunc(func(i int, _ string, _ string, _ rune) {
-			mainTextView.Clear()
-			mainTextView.ScrollToBeginning()
-			mainTextView.SetText(drawArticle(initRss[i].URL))
-			mainTextView.SetTitle(initRss[i].Title)
-			app.SetFocus(mainTextView)
-			pages.SwitchToPage("main")
-		})
-	}
+	ui := &RSSListUIComponents{}
+	ui.App = app
+	ui.List = list
+	ui.MainTextView = mainTextView
+	ui.StatusTextView = keybindings
+	ui.Pages = pages
+	ui.SearchInput = inputField
+	drawRSSList(ui, safeViewerResults.ViewerResults)
+
+	// 読込み終了まで再描画
+	go redrawRSSListUntilComplete(ui, &safeViewerResults)
+	// for _, item := range initRss {
+	// 	// item := item // クロージャで変数のコピーを作成
+	// 	list.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2"), "", 0, nil)
+	// 	list.SetSelectedFunc(func(i int, _ string, _ string, _ rune) {
+	// 		mainTextView.Clear()
+	// 		mainTextView.ScrollToBeginning()
+	// 		mainTextView.SetText(drawArticle(initRss[i].URL))
+	// 		mainTextView.SetTitle(initRss[i].Title)
+	// 		app.SetFocus(mainTextView)
+	// 		pages.SwitchToPage("main")
+	// 	})
+	// }
 	// テキストボックスの入力が変更されたときのハンドラ
 	inputField.SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEnter {
-			list.Clear()
-			text := inputField.GetText()
-			results := filterViewerResultByName(text, &initRss)
-			for _, item := range results {
-				// item := item // クロージャで変数のコピーを作成
-				list.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2"), "", 0, nil)
-				list.SetSelectedFunc(func(i int, _ string, _ string, _ rune) {
-					mainTextView.Clear()
-					mainTextView.ScrollToBeginning()
-					mainTextView.SetText(drawArticle(results[i].URL))
-					mainTextView.SetTitle(results[i].Title)
-					app.SetFocus(mainTextView)
-					pages.SwitchToPage("main")
-				})
-			}
+			drawRSSList(ui, safeViewerResults.ViewerResults)
+			// list.Clear()
+			// text := inputField.GetText()
+			// results := filterViewerResultByName(text, &initRss)
+			// for _, item := range results {
+			// 	// item := item // クロージャで変数のコピーを作成
+			// 	list.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2"), "", 0, nil)
+			// 	list.SetSelectedFunc(func(i int, _ string, _ string, _ rune) {
+			// 		mainTextView.Clear()
+			// 		mainTextView.ScrollToBeginning()
+			// 		mainTextView.SetText(drawArticle(results[i].URL))
+			// 		mainTextView.SetTitle(results[i].Title)
+			// 		app.SetFocus(mainTextView)
+			// 		pages.SwitchToPage("main")
+			// 	})
+			// }
 			app.SetFocus(list)
 		}
 	})
@@ -139,4 +231,5 @@ func main() {
 	if err := app.SetRoot(layout, true).Run(); err != nil {
 		panic(err)
 	}
+	log.Printf("Bye.")
 }
