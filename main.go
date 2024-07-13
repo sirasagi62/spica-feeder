@@ -156,37 +156,11 @@ func main() {
 
 	// 読込み終了まで再描画
 	go redrawRSSListUntilComplete(ui, &safeViewerResults)
-	// for _, item := range initRss {
-	// 	// item := item // クロージャで変数のコピーを作成
-	// 	list.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2"), "", 0, nil)
-	// 	list.SetSelectedFunc(func(i int, _ string, _ string, _ rune) {
-	// 		mainTextView.Clear()
-	// 		mainTextView.ScrollToBeginning()
-	// 		mainTextView.SetText(drawArticle(initRss[i].URL))
-	// 		mainTextView.SetTitle(initRss[i].Title)
-	// 		app.SetFocus(mainTextView)
-	// 		pages.SwitchToPage("main")
-	// 	})
-	// }
+
 	// テキストボックスの入力が変更されたときのハンドラ
 	inputField.SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEnter {
 			drawRSSList(ui, safeViewerResults.ViewerResults)
-			// list.Clear()
-			// text := inputField.GetText()
-			// results := filterViewerResultByName(text, &initRss)
-			// for _, item := range results {
-			// 	// item := item // クロージャで変数のコピーを作成
-			// 	list.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2"), "", 0, nil)
-			// 	list.SetSelectedFunc(func(i int, _ string, _ string, _ rune) {
-			// 		mainTextView.Clear()
-			// 		mainTextView.ScrollToBeginning()
-			// 		mainTextView.SetText(drawArticle(results[i].URL))
-			// 		mainTextView.SetTitle(results[i].Title)
-			// 		app.SetFocus(mainTextView)
-			// 		pages.SwitchToPage("main")
-			// 	})
-			// }
 			app.SetFocus(list)
 		}
 	})
