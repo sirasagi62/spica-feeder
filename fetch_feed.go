@@ -68,17 +68,14 @@ func (rf *RSSFetcher) GetFeed(srcs RSSFeed, svr *SafeViewerResults) {
 	for _, src := range srcs.Src {
 		if src.Main != nil {
 			log.Printf("Processing ....:%s", *src.Main)
-			svr.Mu.Lock()
-			svr.FetchingURL = *src.Main
-			svr.ViewerResults = append(svr.ViewerResults, rf.getFeedResults(*src.Main)...)
-			svr.Mu.Unlock()
+			svr.append(rf.getFeedResults(*src.Main), *src.Main)
 		}
-		// if src.Topic != nil {
-		// 	feedResults = append(feedResults, fetchTopicFeed(*src.Topic, fp)...)
-		// }
-		// if src.User != nil {
-		// 	feedResults = append(feedResults, fetchUserFeed(*src.User, fp)...)
-		// }
+		if src.Topic != nil {
+			svr.append(rf.fetchTopicFeed(*src.Topic), src.Topic.URL)
+		}
+		if src.User != nil {
+			svr.append(rf.fetchUserFeed(*src.User), src.User.URL)
+		}
 	}
 	svr.Done = true
 	sort.Slice(svr.ViewerResults, func(i, j int) bool {

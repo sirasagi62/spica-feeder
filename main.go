@@ -65,6 +65,13 @@ type SafeViewerResults struct {
 	ViewerResults []ViewerResult
 }
 
+func (svr *SafeViewerResults) append(extend []ViewerResult, fetchingURL string) {
+	svr.Mu.Lock()
+	svr.FetchingURL = fetchingURL
+	svr.ViewerResults = append(svr.ViewerResults, extend...)
+	svr.Mu.Unlock()
+}
+
 func main() {
 	// Logging
 	// ログを書き込むファイルを開く（なければ作成）
