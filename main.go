@@ -1,8 +1,11 @@
 package main
 
 import (
+	"log"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func main() {
@@ -14,6 +17,12 @@ func main() {
 
  - Press '/' to search
 	`
+	// Open the data.db file. It will be created if it doesn't exist.
+	db, err := leveldb.OpenFile("data.db", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 	app := tview.NewApplication()
 	initRss := initFeeder()
 	// メイン画面のテキストビュー
@@ -73,7 +82,7 @@ func main() {
 		if key == tcell.KeyEnter {
 			list.Clear()
 			text := inputField.GetText()
-			results := fileterViewerResultByName(text, &initRss)
+			results := filterViewerResultByName(text, &initRss)
 			for _, item := range results {
 				// item := item // クロージャで変数のコピーを作成
 				list.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2"), "", 0, nil)
