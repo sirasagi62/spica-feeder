@@ -18,11 +18,11 @@ type RSSFetcher struct {
 	DB                   *leveldb.DB
 }
 
-func (rf *RSSFetcher) getFeedResults(url string) []ViewerResult {
+func (rf *RSSFetcher) getFeedResults(url string, extraTagInfo []string) []ViewerResult {
 	encodedCVR, err := rf.DB.Get([]byte(url), nil)
 	// そもそもdbを取得できなかった。
 	if leveldb.ErrNotFound == err {
-		return rf.fetchEachFeedURLOverNetwork(url)
+		return rf.fetchEachFeedURLOverNetwork(url, extraTagInfo)
 	} else if err != nil {
 		log.Fatal("Failed to read db")
 		return []ViewerResult{}
@@ -35,20 +35,19 @@ func (rf *RSSFetcher) getFeedResults(url string) []ViewerResult {
 	duration := rf.Now.Sub(cvr.CachedDate).Seconds()
 	// キャッシュ切れ
 	if duration > 3600.0 {
-		return rf.fetchEachFeedURLOverNetwork(url)
+		return rf.fetchEachFeedURLOverNetwork(url, extraTagInfo)
 	}
 	log.Printf("Use cache for %s", url)
 	return cvr.Value
 }
-func (rf *RSSFetcher) fetchEachFeedURLOverNetwork(url string) []ViewerResult {
-	log.Printf("Sleep for avoiding DDoS attack")
+func (rf *RSSFetcher) fetchEachFeedURLOverNetwork(url string, extraTagInfo []string) []ViewerResult {
 	time.Sleep(2 * time.Second)
 	log.Printf("Fetch data : %s", url)
 	// Fetch
 	fetchedFeeds, _ := rf.Fp.ParseURL(url)
 	res := make([]ViewerResult, len(fetchedFeeds.Items))
 	for i, f := range fetchedFeeds.Items {
-		res[i] = ViewerResult{Title: f.Title, URL: f.Link, Date: *f.PublishedParsed}
+		res[i] = ViewerResult{Title: f.Title, URL: f.Link, Date: *f.PublishedParsed, Categories: append(f.Categories, extraTagInfo...), Description: f.Description}
 	}
 
 	// DBにキャッシュを保存
@@ -68,7 +67,7 @@ func (rf *RSSFetcher) GetFeed(srcs RSSFeed, svr *SafeViewerResults) {
 	for _, src := range srcs.Src {
 		if src.Main != nil {
 			log.Printf("Processing ....:%s", *src.Main)
-			svr.append(rf.getFeedResults(*src.Main), *src.Main)
+			svr.append(rf.getFeedResults(*src.Main, []string{}), *src.Main)
 		}
 		if src.Topic != nil {
 			svr.append(rf.fetchTopicFeed(*src.Topic), src.Topic.URL)
@@ -86,7 +85,7 @@ func (rf *RSSFetcher) GetFeed(srcs RSSFeed, svr *SafeViewerResults) {
 func (rf *RSSFetcher) fetchTopicFeed(t Topic) []ViewerResult {
 	var feedResults []ViewerResult
 	for _, fol := range t.Following {
-		feedResults = append(feedResults, rf.getFeedResults(strings.ReplaceAll(t.URL, "$topic", fol))...)
+		feedResults = append(feedResults, rf.getFeedResults(strings.ReplaceAll(t.URL, "$topic", fol), []string{fol})...)
 	}
 	return feedResults
 }
@@ -94,7 +93,7 @@ func (rf *RSSFetcher) fetchTopicFeed(t Topic) []ViewerResult {
 func (rf *RSSFetcher) fetchUserFeed(t Topic) []ViewerResult {
 	var feedResults []ViewerResult
 	for _, fol := range t.Following {
-		feedResults = append(feedResults, rf.getFeedResults(strings.ReplaceAll(t.URL, "$topic", fol))...)
+		feedResults = append(feedResults, rf.getFeedResults(strings.ReplaceAll(t.URL, "$topic", fol), []string{})...)
 	}
 	return feedResults
 }

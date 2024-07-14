@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -21,16 +22,16 @@ type RSSListUIComponents struct {
 	SearchInput    *tview.InputField
 }
 
-func drawRSSList(ui *RSSListUIComponents, RSS []ViewerResult) {
+func drawRSSList(ui *RSSListUIComponents, RSS []ViewerResult, af ArticleFetcher) {
 	ui.List.Clear()
 	text := ui.SearchInput.GetText()
 	results := filterViewerResultByName(text, &RSS)
 	for _, item := range results {
-		ui.List.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2 15:04"), item.URL, 0, nil)
+		ui.List.AddItem(item.Title+" - "+item.Date.Local().UTC().Format("2006/1/2 15:04"), "#"+strings.Join(item.Categories, "#")+":"+item.Description, 0, nil)
 		ui.List.SetSelectedFunc(func(i int, _ string, _ string, _ rune) {
 			ui.MainTextView.Clear()
 			ui.MainTextView.ScrollToBeginning()
-			ui.MainTextView.SetText(drawArticle(results[i].URL))
+			ui.MainTextView.SetText(af.DrawArticle(results[i]))
 			ui.MainTextView.SetTitle(results[i].Title)
 			ui.App.SetFocus(ui.MainTextView)
 			ui.Pages.SwitchToPage("main")
@@ -38,20 +39,20 @@ func drawRSSList(ui *RSSListUIComponents, RSS []ViewerResult) {
 	}
 }
 
-func redrawRSSListUntilComplete(ui *RSSListUIComponents, svr *SafeViewerResults) {
+func redrawRSSListUntilComplete(ui *RSSListUIComponents, svr *SafeViewerResults, af ArticleFetcher) {
 	for {
 		if svr.Done {
 			log.Println("Completed to fetch RSS Feeds.")
 			ui.App.QueueUpdateDraw(func() {
 				ui.StatusTextView.SetText("Completed to fetch :)")
-				drawRSSList(ui, svr.ViewerResults)
+				drawRSSList(ui, svr.ViewerResults, af)
 			})
 
 			return
 		}
 		ui.App.QueueUpdateDraw(func() {
 			ui.StatusTextView.SetText("Fetching :" + svr.FetchingURL)
-			drawRSSList(ui, svr.ViewerResults)
+			drawRSSList(ui, svr.ViewerResults, af)
 		})
 		time.Sleep(1 * time.Second)
 	}
@@ -109,6 +110,9 @@ func main() {
 	defer db.Close()
 	log.Print("Init App.")
 
+	af := InitArticleFetcher()
+	defer af.Close()
+
 	app := tview.NewApplication()
 	safeViewerResults := SafeViewerResults{ViewerResults: []ViewerResult{}, Done: false}
 	initFeeder(db, &safeViewerResults)
@@ -159,15 +163,15 @@ func main() {
 	ui.StatusTextView = keybindings
 	ui.Pages = pages
 	ui.SearchInput = inputField
-	drawRSSList(ui, safeViewerResults.ViewerResults)
+	drawRSSList(ui, safeViewerResults.ViewerResults, af)
 
 	// 読込み終了まで再描画
-	go redrawRSSListUntilComplete(ui, &safeViewerResults)
+	go redrawRSSListUntilComplete(ui, &safeViewerResults, af)
 
 	// テキストボックスの入力が変更されたときのハンドラ
 	inputField.SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEnter {
-			drawRSSList(ui, safeViewerResults.ViewerResults)
+			drawRSSList(ui, safeViewerResults.ViewerResults, af)
 			app.SetFocus(list)
 		}
 	})
@@ -184,7 +188,7 @@ func main() {
 		return event
 	})
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyCtrlQ {
+		if event.Key() == tcell.KeyRune && event.Rune() == 'q' {
 			app.Stop()
 		}
 		return event

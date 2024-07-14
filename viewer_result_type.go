@@ -10,9 +10,11 @@ import (
 )
 
 type ViewerResult struct {
-	Title string
-	URL   string
-	Date  time.Time
+	Title       string
+	URL         string
+	Categories  []string
+	Description string
+	Date        time.Time
 }
 
 func filterViewerResultByName(searchStr string, vr *[]ViewerResult) []ViewerResult {
@@ -50,4 +52,34 @@ func DecodeCachedViewerResults(data []byte) (CachedViewerResults, error) {
 		return CachedViewerResults{}, err
 	}
 	return cvr, nil
+}
+
+type CachedArticle struct {
+	Content     string
+	URL         string
+	Categories  []string
+	Description string
+}
+
+// CachedArticleをgobにエンコードする関数
+func EncodeCachedArticle(ca CachedArticle) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(ca)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// gobからCachedArticleをデコードする関数
+func DecodeCachedArticle(data []byte) (CachedArticle, error) {
+	var ca CachedArticle
+	buf := bytes.NewBuffer(data)
+	dec := gob.NewDecoder(buf)
+	err := dec.Decode(&ca)
+	if err != nil {
+		return CachedArticle{}, err
+	}
+	return ca, nil
 }
