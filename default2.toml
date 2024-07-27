@@ -51,11 +51,11 @@ main = "https://www.publickey1.jp/atom.xml"
 [[src]]
 main = "https://gigazine.net/news/rss_2.0/"
 
-[[src]]
-main = "https://huggingface.co/blog/feed.xml"
+# [[src]]
+# main = "https://huggingface.co/blog/feed.xml"
 
-[[src]]
-topic.url = "https://www.reddit.com/r/$topic/.rss"
-topic.following = [
-    "LocalLLaMA"
-]
+# [[src]]
+# topic.url = "https://www.reddit.com/r/$topic/.rss"
+# topic.following = [
+#     "LocalLLaMA"
+# ]
