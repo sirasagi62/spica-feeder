@@ -22,7 +22,7 @@ type RSSListUIComponents struct {
 	SearchInput    *tview.InputField
 }
 
-func drawRSSList(ui *RSSListUIComponents, RSS []ViewerResult, af ArticleFetcher) {
+func (ui *RSSListUIComponents) drawRSSList(RSS []ViewerResult, af ArticleFetcher) {
 	ui.List.Clear()
 	text := ui.SearchInput.GetText()
 	results := filterViewerResultByName(text, &RSS)
@@ -39,20 +39,20 @@ func drawRSSList(ui *RSSListUIComponents, RSS []ViewerResult, af ArticleFetcher)
 	}
 }
 
-func redrawRSSListUntilComplete(ui *RSSListUIComponents, svr *SafeViewerResults, af ArticleFetcher) {
+func (ui *RSSListUIComponents) redrawRSSListUntilComplete(svr *SafeViewerResults, af ArticleFetcher) {
 	for {
 		if svr.Done {
 			log.Println("Completed to fetch RSS Feeds.")
 			ui.App.QueueUpdateDraw(func() {
 				ui.StatusTextView.SetText("Completed to fetch :)")
-				drawRSSList(ui, svr.ViewerResults, af)
+				ui.drawRSSList(svr.ViewerResults, af)
 			})
 
 			return
 		}
 		ui.App.QueueUpdateDraw(func() {
 			ui.StatusTextView.SetText("Fetching :" + svr.FetchingURL)
-			drawRSSList(ui, svr.ViewerResults, af)
+			ui.drawRSSList(svr.ViewerResults, af)
 		})
 		time.Sleep(1 * time.Second)
 	}
@@ -123,7 +123,7 @@ func main() {
 		SetRegions(true).
 		SetWordWrap(true)
 	mainTextView.SetBorder(true)
-	mainTextView.SetTitle("🚀 ZennView")
+	mainTextView.SetTitle("🔷 Spica")
 
 	// キーバインド情報の表示
 	keybindings := tview.NewTextView().
@@ -163,15 +163,15 @@ func main() {
 	ui.StatusTextView = keybindings
 	ui.Pages = pages
 	ui.SearchInput = inputField
-	drawRSSList(ui, safeViewerResults.ViewerResults, af)
+	ui.drawRSSList(safeViewerResults.ViewerResults, af)
 
 	// 読込み終了まで再描画
-	go redrawRSSListUntilComplete(ui, &safeViewerResults, af)
+	go ui.redrawRSSListUntilComplete(&safeViewerResults, af)
 
 	// テキストボックスの入力が変更されたときのハンドラ
 	inputField.SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEnter {
-			drawRSSList(ui, safeViewerResults.ViewerResults, af)
+			ui.drawRSSList(safeViewerResults.ViewerResults, af)
 			app.SetFocus(list)
 		}
 	})
