@@ -32,11 +32,11 @@ func (rf *RSSFetcher) getFeedResults(url string, extraTagInfo []string) []Viewer
 		log.Fatal("Failed to decode CachedViewerResults")
 		return []ViewerResult{}
 	}
-	duration := rf.Now.Sub(cvr.CachedDate).Seconds()
-	// キャッシュ切れ
-	if duration > 3600.0 {
-		return rf.fetchEachFeedURLOverNetwork(url, extraTagInfo)
-	}
+	// duration := rf.Now.Sub(cvr.CachedDate).Seconds()
+	// // キャッシュ切れ
+	// if duration > 3600.0 {
+	// 	return rf.fetchEachFeedURLOverNetwork(url, extraTagInfo)
+	// }
 	log.Printf("Use cache for %s", url)
 	return cvr.Value
 }
