@@ -16,6 +16,6 @@ func initFeeder(db *leveldb.DB, svr *SafeViewerResults) {
 		log.Fatal("cannot load config file.")
 	}
 	rf, _ := UnmarshalRSSFeed(f)
-	fetcher := RSSFetcher{Now: time.Now(), CacheLifeTimeSeconds: 3600, Fp: gofeed.NewParser(), DB: db}
+	fetcher := FeedFetcher{Now: time.Now(), CacheLifeTimeSeconds: 3600, Fp: gofeed.NewParser(), DB: db}
 	go fetcher.GetFeed(rf, svr)
 }

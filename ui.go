@@ -5,12 +5,11 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // UIに関わる部分
 
-func initUI(db *leveldb.DB, af ArticleFetcher, safeViewerResults *SafeViewerResults) *RSSListUIComponents {
+func initUI(af ArticleFetcher, safeViewerResults *SafeViewerResults) *RSSListUIComponents {
 	startText := `
 ┏┓  •     ┏┓     ┓
 ┗┓┏┓┓┏┏┓  ┣ ┏┓┏┓┏┫

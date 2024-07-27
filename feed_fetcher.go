@@ -11,14 +11,14 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
-type RSSFetcher struct {
+type FeedFetcher struct {
 	Now                  time.Time
 	CacheLifeTimeSeconds float64
 	Fp                   *gofeed.Parser
 	DB                   *leveldb.DB
 }
 
-func (rf *RSSFetcher) getFeedResults(url string, extraTagInfo []string) []ViewerResult {
+func (rf *FeedFetcher) getFeedResults(url string, extraTagInfo []string) []ViewerResult {
 	encodedCVR, err := rf.DB.Get([]byte(url), nil)
 	// そもそもdbを取得できなかった。
 	if leveldb.ErrNotFound == err {
@@ -40,7 +40,7 @@ func (rf *RSSFetcher) getFeedResults(url string, extraTagInfo []string) []Viewer
 	log.Printf("Use cache for %s", url)
 	return cvr.Value
 }
-func (rf *RSSFetcher) fetchEachFeedURLOverNetwork(url string, extraTagInfo []string) []ViewerResult {
+func (rf *FeedFetcher) fetchEachFeedURLOverNetwork(url string, extraTagInfo []string) []ViewerResult {
 	time.Sleep(2 * time.Second)
 	log.Printf("Fetch data : %s", url)
 	// Fetch
@@ -63,7 +63,7 @@ func (rf *RSSFetcher) fetchEachFeedURLOverNetwork(url string, extraTagInfo []str
 	}
 	return res
 }
-func (rf *RSSFetcher) GetFeed(srcs RSSFeed, svr *SafeViewerResults) {
+func (rf *FeedFetcher) GetFeed(srcs RSSFeed, svr *SafeViewerResults) {
 	for _, src := range srcs.Src {
 		if src.Main != nil {
 			log.Printf("Processing ....:%s", *src.Main)
@@ -82,7 +82,7 @@ func (rf *RSSFetcher) GetFeed(srcs RSSFeed, svr *SafeViewerResults) {
 	})
 }
 
-func (rf *RSSFetcher) fetchTopicFeed(t Topic) []ViewerResult {
+func (rf *FeedFetcher) fetchTopicFeed(t Topic) []ViewerResult {
 	var feedResults []ViewerResult
 	for _, fol := range t.Following {
 		feedResults = append(feedResults, rf.getFeedResults(strings.ReplaceAll(t.URL, "$topic", fol), []string{fol})...)
@@ -90,7 +90,7 @@ func (rf *RSSFetcher) fetchTopicFeed(t Topic) []ViewerResult {
 	return feedResults
 }
 
-func (rf *RSSFetcher) fetchUserFeed(t Topic) []ViewerResult {
+func (rf *FeedFetcher) fetchUserFeed(t Topic) []ViewerResult {
 	var feedResults []ViewerResult
 	for _, fol := range t.Following {
 		feedResults = append(feedResults, rf.getFeedResults(strings.ReplaceAll(t.URL, "$topic", fol), []string{})...)

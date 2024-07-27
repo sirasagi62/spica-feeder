@@ -17,7 +17,7 @@ func main() {
 	safeViewerResults := SafeViewerResults{ViewerResults: []ViewerResult{}, Done: false}
 	initFeeder(db, &safeViewerResults)
 
-	ui := initUI(db, af, &safeViewerResults)
+	ui := initUI(af, &safeViewerResults)
 	ui.run()
 }
 
