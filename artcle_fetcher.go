@@ -1,9 +1,10 @@
 package main
 
 import (
-	"log"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/charmbracelet/glamour"
@@ -45,7 +46,9 @@ func (af ArticleFetcher) Close() {
 }
 func (af ArticleFetcher) fetchArticle(vr ViewerResult) string {
 	article, err := readability.FromURL(vr.URL, 30*time.Second)
+	log.Print("Fetch from remote: ", vr.URL)
 	if err != nil {
+		log.Panic("Caused error when fetching")
 		return "Not Article"
 	}
 	m, err := af.converter.ConvertString(article.Content)
@@ -71,6 +74,7 @@ func (af ArticleFetcher) GetArticle(vr ViewerResult) string {
 	} else if err != nil {
 		return ""
 	}
+	log.Print("Use cache:", vr.URL)
 	ca, err := DecodeCachedArticle(encodedArticle)
 	if err != nil {
 		log.Fatal("Failed to decode article")

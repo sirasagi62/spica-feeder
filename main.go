@@ -1,14 +1,17 @@
 package main
 
 import (
-	"log"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func main() {
-	initLogging()
+	file := initLogging()
+	// 関数が終了する際にファイルを閉じる
+	defer file.Close()
 	db := initDatabase()
 	defer db.Close()
 	af := InitArticleFetcher()
@@ -17,25 +20,25 @@ func main() {
 	safeViewerResults := SafeViewerResults{ViewerResults: []ViewerResult{}, Done: false}
 	initFeeder(db, &safeViewerResults)
 
+	//bulk_fetch_article(&safeViewerResults, af)
+
 	ui := initUI(af, &safeViewerResults)
 	ui.run()
 }
 
 // 初期化部分
-func initLogging() {
+func initLogging() *os.File {
 	file, err := os.OpenFile("spica.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		// エラーハンドリング
 		log.Fatal(err)
 	}
 
-	// 関数が終了する際にファイルを閉じる
-	defer file.Close()
-
 	// ログの出力先をファイルに設定
 	log.SetOutput(file)
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Print("Init App.")
+
+	return file
 }
 
 func initDatabase() *leveldb.DB {

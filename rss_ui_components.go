@@ -1,9 +1,10 @@
 package main
 
 import (
-	"log"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/rivo/tview"
 )
